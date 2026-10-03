@@ -1,0 +1,164 @@
+// Prisma Schema for Catawba Equipment Checkout System
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User roles
+enum Role {
+  ADMIN
+  STAFF
+  STUDENT
+}
+
+// Reservation status
+enum ReservationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CHECKED_OUT
+  CHECKED_IN
+  CANCELLED
+  OVERDUE
+}
+
+// User model
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          Role      @default(STUDENT)
+  studentId     String?   @unique // Catawba student ID
+  phone         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  reservations  Reservation[]
+  waivers       Waiver[]
+  auditLogs     AuditLog[] @relation("Actor")
+
+  @@map("users")
+}
+
+// Equipment categories
+model Category {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  description String?
+  createdAt   DateTime    @default(now())
+
+  equipment   Equipment[]
+
+  @@map("categories")
+}
+
+// Equipment tags for filtering
+model Tag {
+  id          String      @id @default(cuid())
+  name        String      @unique
+
+  equipment   Equipment[]
+
+  @@map("tags")
+}
+
+// Equipment inventory
+model Equipment {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  serialNumber  String?   @unique
+  category      Category? @relation(fields: [categoryId], references: [id])
+  categoryId    String?
+  tags          Tag[]
+  quantity      Int       @default(1)
+  available     Int       @default(0)
+  location      String?
+  purchaseDate  DateTime?
+  notes         String?
+  imageUrl      String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  reservations  Reservation[]
+  waivers       Waiver[]
+
+  @@map("equipment")
+}
+
+// Reservations
+model Reservation {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id])
+  equipmentId String
+  equipment   Equipment         @relation(fields: [equipmentId], references: [id])
+  startDate   DateTime
+  endDate     DateTime
+  status      ReservationStatus @default(PENDING)
+  purpose     String?           // Purpose of checkout
+  approvedBy  String?
+  approvedAt  DateTime?
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([equipmentId])
+  @@index([startDate, endDate])
+  @@map("reservations")
+}
+
+// Digital waivers
+model Waiver {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  equipmentId   String?
+  equipment     Equipment? @relation(fields: [equipmentId], references: [id])
+  signature     String    // Base64 encoded signature image
+  signedAt      DateTime  @default(now())
+  ipAddress     String?
+  userAgent     String?
+  waiverType    String    // "general" or specific equipment waiver
+  isValid       Boolean   @default(true)
+
+  @@index([userId])
+  @@index([equipmentId])
+  @@map("waivers")
+}
+
+// Audit trail
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId     String
+  actor       User     @relation("Actor", fields: [actorId], references: [id])
+  action      String   // CREATE, UPDATE, DELETE, APPROVE, REJECT, CHECKOUT, CHECKIN
+  entity      String   // User, Equipment, Reservation, etc.
+  entityId    String
+  changes     String?  // JSON of changes made
+  ipAddress   String?
+  userAgent   String?
+  timestamp   DateTime @default(now())
+
+  @@index([actorId])
+  @@index([entity, entityId])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+// Settings for system configuration
+model Setting {
+  key       String  @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
