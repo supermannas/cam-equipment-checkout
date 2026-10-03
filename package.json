@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma db push --accept-data-loss && prisma generate && next build",
+    "build": "node scripts/run-migration.js && prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate || echo 'Skipping Prisma generation (database unavailable during build)'",
@@ -25,6 +25,7 @@
     "next": "14.2.15",
     "next-auth": "^4.24.8",
     "pdf-lib": "^1.17.1",
+    "pg": "^8.23.1",
     "prisma": "^5.19.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
