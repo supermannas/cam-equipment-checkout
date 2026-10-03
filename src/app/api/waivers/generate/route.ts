@@ -234,7 +234,7 @@ export async function POST(req: Request) {
 
     page.drawText('Digital Signature', {
       x: margin + 10,
-      y + 15,
+      y: y + 15,
       size: 10,
       font,
       color: 'rgb(0.6, 0.6, 0.6)',

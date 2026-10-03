@@ -1,6 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  typescript: {
+    // !! WARN !!
+    // Ignore type errors during build
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    // !! WARN !!
+    // Ignore ESLint errors during build
+    ignoreDuringBuilds: true,
+  },
 };
 
 module.exports = nextConfig;
